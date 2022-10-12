@@ -6,9 +6,7 @@ N3=input.int(1,"Enter The Number of Previous Candles")
 N4=input.int(1,"Enter The Factor ")
 
 
-
 get_resistance_value()=>
-    var resistance=false
     var float resistance_price=na
     var int resistance_index=na
     index=1
@@ -16,24 +14,50 @@ get_resistance_value()=>
 
     // Criteria for Resistance Level
     if barstate.islast
+        candleindex=N2+index-1
 
-        while not resistance
-            // get the index of the candle and the hight
-            candleindex=N2+index
-            candlehigh=high[candleindex]
+        while true
             flag=true
             flag2=false
             
+            // case one
+            while index <= candleindex
+                float gap=-1
+                float sum_gaps=0
+                if close[index] > open[index-1]
+                    gap:=close[index]-open[index-1]
+
+                if gap !=-1
+                    for i=index to N3+index
+                        sum_gaps+=math.abs(close[index+1]-open[index])
+
+                    if gap > N4*((sum_gaps)/N3)
+                        flag2:=true
+                    if flag2==true 
+                        for i=1 to index-1
+                            if high[i]>=close[index]
+                                flag2:=false
+                
+                if flag2==true
+                    resistance_price:=close[index] 
+                    resistance_index:=index
+                    break  
+                index+=1
+            
+            if flag2 
+                break
+            
+            
             // case 1
             // check if this candle large of all left
-            for i=1 to candleindex-1
-                if candlehigh <= high[i]
+            for i=1 to index-1
+                if high[index] <= high[i]
                     flag:=false
                     break
 
             // check if this candl large of all right
-            for i=(candleindex+1) to candleindex+N1
-                if candlehigh <= high[i]
+            for i=(index+1) to index+N1
+                if high[index] <= high[i]
                     flag:=false
                     break
 
@@ -49,20 +73,20 @@ get_resistance_value()=>
 
                 if gap > N4*((sum_gaps)/N3)
                     flag2:=true
-                else 
+                if flag2 
                     for i=1 to index-1
                         if high[i]>=high[index]
-                            flag:=false
+                            flag2:=false
             
-            if flag2
-                resistance_price:=close[index] 
+            if flag2==true
+                resistance_price:=close[index]
                 resistance_index:=index
                 break  
 
             //assign the price and breake
             else if flag==true
-                resistance_price:=candlehigh 
-                resistance_index:=candleindex
+                resistance_price:=high[index] 
+                resistance_index:=index
                 break  
             index+=1
     [resistance_index,resistance_price]
@@ -71,37 +95,61 @@ get_resistance_value()=>
 
 get_support_value()=>
     // Set Variables
-    var support=false
     index=1
     var float support_price=na
     var int support_index=na
     if barstate.islast
+        candleindex=N2+index-1
+        while true
 
-        while not support
-        // get the index of the candle and the hight
-            candleindex=N2+index
-            candlelow=low[candleindex]
             flag=true
             flag2=false
+
+            while index <= candleindex
+               
+                // case one
+                float gap=-1
+                float sum_gaps=0
+                if close[index] < open[index-1]
+                    gap:=math.abs(close[index]-open[index-1])
+
+                if gap !=-1
+                    for i=index to N3+index
+                        sum_gaps+=math.abs(close[index+1]-open[index])
+
+                    if gap > N4*((sum_gaps)/N3)
+                        flag2:=true
+                    if flag2 
+                        for i=1 to index-1
+                            if low[i]<=low[index]
+                                flag2:=false
+                
+                if flag2==true
+                    support_price:=low[index] 
+                    support_index:=index
+                    break  
+                index+=1
             
+            if flag2 
+                break           
             // case 1
             // check if this candle large of all left
-            for i=1 to candleindex-1
-                if candlelow >= low[i]
+            for i=1 to index-1
+                if low[index] >= low[i]
                     flag:=false
                     break
 
             // check if this candl large of all right
-            for i=(candleindex+1) to candleindex+N1
-                if candlelow >= low[i]
+            for i=(index+1) to index+N1
+                if low[index] >= low[i]
                     flag:=false
                     break
 
             // case 2
             float gap=-1
             float sum_gaps=0
-            if close[index] > open[index-1]
-                gap:=close[index]-open[index-1]
+            if close[index] < open[index-1]
+                gap:=math.abs(close[index]-open[index-1])
 
             if gap !=-1
                 for i=index to N3+index
@@ -109,21 +157,16 @@ get_support_value()=>
 
                 if gap > N4*((sum_gaps)/N3)
                     flag2:=true
-                else 
+                if flag2 
                     for i=1 to index-1
-                        if high[i]>=high[index]
+                        if low[i]>=low[index]
                             flag:=false
             
-            if flag2
-                support_price:=open[index] 
+            if flag2 or flag
+                support_price:=low[index] 
                 support_index:=index
                 break  
 
-            // assign the price and breake
-            if flag==true
-                support_price:=candlelow
-                support_index:=candleindex 
-                break  
             index+=1
     [support_index,support_price]
 
